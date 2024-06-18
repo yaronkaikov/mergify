@@ -1,2 +1,6 @@
+<<<<<<< HEAD
 testing
 testing2
+=======
+testing1
+>>>>>>> 9975b28 (update-file)
