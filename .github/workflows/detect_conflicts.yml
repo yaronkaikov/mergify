@@ -1,8 +1,8 @@
 name: Detect PR Conflicts and Fork
 
 on:
-  pull_request_target:
-    types: [opened, synchronize, edited, reopened]
+  pull_request:
+    types: [opened]
 
 jobs:
   check-conflicts:
@@ -16,15 +16,25 @@ jobs:
         run: |
           conflicts=$(git diff --name-only --diff-filter=U)
           if [ -n "$conflicts" ]; then
-            echo "Conflicts detected"
-            echo "::set-output name=conflicts::true"
+            echo "conflicts=true" >> $GITHUB_ENV
           else
-            echo "No conflicts"
-            echo "::set-output name=conflicts::false"
+            echo "conflicts=false" >> $GITHUB_ENV
+          fi
+
+      - name: Check if PR has been processed
+        id: check_label
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          LABELS=$(curl -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/issues/$PR_NUMBER/labels")
+          if echo "$LABELS" | grep -q "processed"; then
+            echo "processed=true" >> $GITHUB_ENV
+          else
+            echo "processed=false" >> $GITHUB_ENV
           fi
 
       - name: Create fork and open new PR if conflicts are found
-        if: steps.check_conflicts.outputs.conflicts == 'true'
+        if: env.conflicts == 'true' && env.processed == 'false'
         run: |
           echo "Forking the repository and creating a new PR"
           # Ensure you have a GitHub token with repo permissions stored as a secret
@@ -55,3 +65,9 @@ jobs:
           curl -H "Authorization: token $GH_TOKEN" \
                -X POST -d "{\"title\":\"$PR_TITLE\",\"body\":\"$PR_BODY\",\"head\":\"$GITHUB_ACTOR:forked-pr\",\"base\":\"main\"}" \
                "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls"
+
+          # Add a label to the original PR to mark it as processed
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          curl -H "Authorization: token $GH_TOKEN" \
+               -X POST -d '{"labels":["processed"]}' \
+               "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/labels"
