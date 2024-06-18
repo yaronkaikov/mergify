@@ -1,0 +1,57 @@
+name: Detect PR Conflicts and Fork
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  check-conflicts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Check for conflicts
+        id: check_conflicts
+        run: |
+          conflicts=$(git diff --name-only --diff-filter=U)
+          if [ -n "$conflicts" ]; then
+            echo "Conflicts detected"
+            echo "::set-output name=conflicts::true"
+          else
+            echo "No conflicts"
+            echo "::set-output name=conflicts::false"
+          fi
+
+      - name: Create fork and open new PR if conflicts are found
+        if: steps.check_conflicts.outputs.conflicts == 'true'
+        run: |
+          echo "Forking the repository and creating a new PR"
+          # Ensure you have a GitHub token with repo permissions stored as a secret
+          GH_TOKEN=${{ secrets.GH_TOKEN }}
+
+          REPO_OWNER=${{ github.repository_owner }}
+          REPO_NAME=${{ github.event.repository.name }}
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_BODY="${{ github.event.pull_request.body }}"
+          PR_HEAD="${{ github.event.pull_request.head.ref }}"
+
+          # Fork the repository
+          curl -H "Authorization: token $GH_TOKEN" \
+               -X POST "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/forks"
+
+          # Clone the forked repository
+          git clone "https://$GH_TOKEN@github.com/$GITHUB_ACTOR/$REPO_NAME"
+          cd $REPO_NAME
+
+          # Create a new branch and cherry-pick the changes
+          git checkout -b forked-pr
+          git cherry-pick origin/$PR_HEAD
+
+          # Push the changes to the forked repository
+          git push origin forked-pr
+
+          # Create a new PR from the forked repository
+          curl -H "Authorization: token $GH_TOKEN" \
+               -X POST -d "{\"title\":\"$PR_TITLE\",\"body\":\"$PR_BODY\",\"head\":\"$GITHUB_ACTOR:forked-pr\",\"base\":\"main\"}" \
+               "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls"
