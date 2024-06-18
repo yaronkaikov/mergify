@@ -2,7 +2,7 @@ pull_request_rules:
   - name: put PR in draft if conflicts
     conditions:
       - label = conflicts
-      - author = mergify[bot]
+      - author = {{ author }}
     actions:
       edit:
          draft: true
