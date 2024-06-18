@@ -1,8 +1,8 @@
 name: Detect PR Conflicts and Fork
 
 on:
-  pull_request:
-    types: [opened, synchronize]
+  pull_request_target:
+    types: [opened, synchronize, edited, reopened]
 
 jobs:
   check-conflicts:
