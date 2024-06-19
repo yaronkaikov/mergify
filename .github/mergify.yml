@@ -9,7 +9,6 @@ pull_request_rules:
       delete_head_branch:
   - name:  Label original PR when backport has conflicts
     conditions:
-      - status-failure
       - check-success=backport
     actions:
       label:
