@@ -1,5 +1,5 @@
 pull_request_rules:
-  - name: Delete mergify backport branch
+  - name: Delete Mergify backport branch
     conditions:
       - base~=next-
       - or:
@@ -9,7 +9,7 @@ pull_request_rules:
       delete_head_branch:
   - name:  Label original PR when backport has conflicts
     conditions:
-      - conflict
+      - check-success=backport
     actions:
       label:
         add:
