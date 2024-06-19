@@ -1,11 +1,4 @@
 pull_request_rules:
-  - name: put PR in draft if conflicts
-    conditions:
-      - label = conflicts
-      - author = mergify[bot]
-    actions:
-      edit:
-         draft: true
   - name: Delete mergify backport branch
     conditions:
       - base~=next-
@@ -14,26 +7,6 @@ pull_request_rules:
         - closed
     actions:
       delete_head_branch:
-  - name: Automate backport pull request 5.4
-    conditions:
-      - base=next # Ensure this rule only applies to PRs merged into the next branch
-      - label=backport/5.4 # The PR must have this label to trigger the backport
-      - label=promoted-to-master
-    actions:
-      backport:
-        title: "[Backport 5.4] {{ title }}"
-        body: |
-          {{ body }}
-
-          {% for c in commits %}
-          (cherry picked from commit {{ c.sha }})
-          {% endfor %}
-
-          Parent PR: #{{number}}
-        branches:
-          - next-5.4
-        assignees:
-          - "{{ author }}"
   - name: Automate backport pull request 6.0
     conditions:
       - base=next # Ensure this rule only applies to PRs merged into the next branch
@@ -55,4 +28,3 @@ pull_request_rules:
         assignees:
           - "{{ author }}"
         ignore_conflicts: false
-        label_conflicts: backport/6.0-conflict
