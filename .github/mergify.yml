@@ -28,3 +28,4 @@ pull_request_rules:
         assignees:
           - "{{ author }}"
         ignore_conflicts: false
+        label_conflicts: backport/6.0-conflicts
