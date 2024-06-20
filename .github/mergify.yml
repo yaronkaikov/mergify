@@ -7,16 +7,6 @@ pull_request_rules:
         - closed
     actions:
       delete_head_branch:
-  - name:  Label original PR when backport has conflicts
-    conditions:
-      - conflict
-    actions:
-      label:
-        add:
-          - backport-conflict
-      backport:
-        branches:
-          - next
   - name: Automate backport pull request 6.0
     conditions:
       - base=next # Ensure this rule only applies to PRs merged into the next branch
@@ -38,3 +28,5 @@ pull_request_rules:
         assignees:
           - "{{ author }}"
         ignore_conflicts: false
+        report_mode: 
+          - comment
