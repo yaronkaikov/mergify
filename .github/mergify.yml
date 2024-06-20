@@ -1,5 +1,5 @@
 pull_request_rules:
-  - name: Delete Mergify backport branch
+  - name: Delete mergify backport branch
     conditions:
       - base~=next-
       - or:
@@ -14,7 +14,6 @@ pull_request_rules:
       - label=promoted-to-master
     actions:
       backport:
-        bot_account: "{{ author }}"
         title: "[Backport 6.0] {{ title }}"
         body: |
           {{ body }}
@@ -28,3 +27,6 @@ pull_request_rules:
           - next-6.0
         assignees:
           - "{{ author }}"
+        ignore_conflicts: false
+        report_mode: 
+          - comment
