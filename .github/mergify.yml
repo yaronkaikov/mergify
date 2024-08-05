@@ -1,9 +1,9 @@
 pull_request_rules:
   - name: Put PR in draft if conflicts
     conditions:
-      - label=conflicts
-      - author=mergify[bot]
-      - head~=^mergify/
+      - label = conflicts
+      - author = mergify[bot]
+      - head ~= ^mergify/
     actions:
       edit:
         draft: true
@@ -15,7 +15,7 @@ pull_request_rules:
           - merged
           - closed
     actions:
-      delete_head_branch: {}
+      delete_head_branch:
 
   - name: Automate backport pull request
     conditions:
@@ -25,13 +25,11 @@ pull_request_rules:
       - or:
           - base=master
           - base=next
+      - body ~= (?i)^(close|fix|resolve)
       - label=promoted-to-master
-      - label~=^backport/\d+\.\d+$
-      - body~=(?i)^(close|fix|resolve)
     actions:
       copy:
-        title: |
-            [Backport *^backport/\d+\.\d+$ ] {{ title }}
+        title: "[Backport {{ label | replace('backport/', '') }}] {{ title }}"
         body: |
           {{ body }}
 
@@ -39,12 +37,8 @@ pull_request_rules:
           (cherry picked from commit {{ c.sha }})
           {% endfor %}
 
-          Refs #{{ number }}
+          Refs #{{number}}
         branches:
-          - label
+          - branch-6.0
         assignees:
           - "{{ author }}"
-shared:
-    backport/6.0: branch-6.0
-    backport/6.1: branch-6.1
-    backport/5.4: branch-5.4
