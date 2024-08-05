@@ -1,20 +1,49 @@
 pull_request_rules:
   - name: Delete mergify backport branch
     conditions:
+<<<<<<< HEAD
       - base~=next-
       - or:
         - merged
         - closed
+=======
+      - label = conflicts
+      - author = mergify[bot]
+      - head ~= ^mergify/
+>>>>>>> 0ef10d4 (testing)
     actions:
       delete_head_branch:
   - name: Automate backport pull request 6.0
     conditions:
+<<<<<<< HEAD
       - base=next # Ensure this rule only applies to PRs merged into the next branch
       - label=backport/6.0 # The PR must have this label to trigger the backport
       - label=promoted-to-master
     actions:
       backport:
         title: "[Backport 6.0] {{ title }}"
+=======
+      - base~=branch-
+      - or:
+          - merged
+          - closed
+    actions:
+      delete_head_branch:
+
+  - name: Automate backport pull request
+    conditions:
+      - or:
+          - closed
+          - merged
+      - or:
+          - base=master
+          - base=next
+      - body ~= (?i)^(close|fix|resolve)
+      - label=promoted-to-master
+    actions:
+      copy:
+        title: "[Backport {{ label | replace('backport/', '') }}] {{ title }}"
+>>>>>>> 0ef10d4 (testing)
         body: |
           {{ body }}
 
@@ -22,6 +51,7 @@ pull_request_rules:
           (cherry picked from commit {{ c.sha }})
           {% endfor %}
 
+<<<<<<< HEAD
           Parent PR: #{{number}}
         branches:
           - next-6.0
@@ -30,3 +60,10 @@ pull_request_rules:
         ignore_conflicts: false
         report_mode: 
           - comment
+=======
+          Refs #{{number}}
+        branches:
+          - branch-6.0
+        assignees:
+          - "{{ author }}"
+>>>>>>> 0ef10d4 (testing)
