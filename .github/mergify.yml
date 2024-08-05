@@ -25,7 +25,7 @@ pull_request_rules:
       - or:
           - base=master
           - base=next
-      - body ~= (?i)^(close|fix|resolve)
+      - body ~= (?i)^(close|fix|resolve)\S+
       - label=promoted-to-master
     actions:
       copy:
