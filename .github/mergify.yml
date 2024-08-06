@@ -1,36 +1,27 @@
 pull_request_rules:
-  - name: Put PR in draft if conflicts
+  - name: put PR in draft if conflicts
     conditions:
       - label = conflicts
       - author = mergify[bot]
-      - head ~= ^mergify/
     actions:
       edit:
-        draft: true
-
-  - name: Delete Mergify backport branch
+         draft: true
+  - name: Delete mergify backport branch
     conditions:
-      - base~=branch-
+      - base~=next-
       - or:
-          - merged
-          - closed
+        - merged
+        - closed
     actions:
       delete_head_branch:
-
-  - name: Automate backport pull request
+  - name: Automate backport pull request 5.4
     conditions:
-      - or:
-          - closed
-          - merged
-      - or:
-          - base=master
-          - base=next
-      - body ~= (?i)(close|fix|resolve)
+      - base=next # Ensure this rule only applies to PRs merged into the next branch
+      - label=backport/5.4 # The PR must have this label to trigger the backport
       - label=promoted-to-master
-      - label~=^backport/\d+\.\d+$
     actions:
-      copy:
-        title: "[Backport {{ label | replace('backport/', '') }}] {{ title }}"
+      backport:
+        title: "[Backport 5.4] {{ title }}"
         body: |
           {{ body }}
 
@@ -38,8 +29,30 @@ pull_request_rules:
           (cherry picked from commit {{ c.sha }})
           {% endfor %}
 
-          Refs #{{number}}
+          Parent PR: #{{number}}
         branches:
-          - branch-6.0
+          - next-5.4
         assignees:
           - "{{ author }}"
+  - name: Automate backport pull request 6.0
+    conditions:
+      - base=next # Ensure this rule only applies to PRs merged into the next branch
+      - label=backport/6.0 # The PR must have this label to trigger the backport
+      - label=promoted-to-master
+    actions:
+      backport:
+        title: "[Backport 6.0] {{ title }}"
+        body: |
+          {{ body }}
+
+          {% for c in commits %}
+          (cherry picked from commit {{ c.sha }})
+          {% endfor %}
+
+          Parent PR: #{{number}}
+        branches:
+          - next-6.0
+        assignees:
+          - "{{ author }}"
+        ignore_conflicts: false
+        label_conflicts: backport/6.0-conflict
