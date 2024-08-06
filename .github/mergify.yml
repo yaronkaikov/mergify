@@ -25,9 +25,8 @@ pull_request_rules:
       - or:
           - base=master
           - base=next
-      - body ~= (?i)(close|fix|resolve)
+      - body ~= (?i)^(close|fix|resolve)
       - label=promoted-to-master
-      - label~=^backport/\d+\.\d+$
     actions:
       copy:
         title: "[Backport {{ label | replace('backport/', '') }}] {{ title }}"
