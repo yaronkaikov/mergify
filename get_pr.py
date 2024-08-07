@@ -14,7 +14,7 @@ g = Github(github_token)
 repo = g.get_repo(f"{REPO_OWNER}/{REPO_NAME}")
 
 
-def get_pr_commits(pr):
+def get_pr_commit(pr):
     """Get the commit that closed or merged the pull request."""
     if pr.merged:
         return pr.merge_commit_sha
@@ -39,8 +39,16 @@ def check_for_conflicts(repo, base_branch_name, compare_branch_name):
         return False
 
 
-def cherry_pick_commits(repo, commits, base_branch_name, temp_branch_name):
+def cherry_pick_commits(pr, repo, commits, base_branch_name, temp_branch_name):
     """Cherry-pick commits and push them to a temporary branch."""
+    commit_sha = pr.merge_commit_sha
+    if pr.closed_at:
+        # Check events to find the commit that closed the PR
+        events = pr.get_issue_events()
+        for event in events:
+            if event.event == 'closed':
+                # Return the commit that closed the PR
+                commit_sha = event.commit_id
     base_commit = repo.get_branch(base_branch_name).commit
     parent_commit = base_commit.commit
     author = InputGitAuthor(
@@ -64,7 +72,7 @@ def cherry_pick_commits(repo, commits, base_branch_name, temp_branch_name):
         parent_commit = new_commit  # Update parent for the next commit
 
         # Add commit message to the list
-        commit_messages.append(f"- (cherry picked from commit {commit.sha})")
+        commit_messages.append(f"- (cherry picked from commit {commit_sha})")
 
     # Create a new temporary branch with the final cherry-picked commit
     try:
@@ -76,9 +84,9 @@ def cherry_pick_commits(repo, commits, base_branch_name, temp_branch_name):
     return new_commit.sha, commit_messages
 
 
-# def get_pr_commits(pr):
-#     """Get all commits in the pull request."""
-#     return pr.get_commits()
+def get_pr_commits(pr):
+    """Get all commits in the pull request."""
+    return pr.get_commits()
 
 
 def create_pull_request(repo, new_branch_name, base_branch_name, pr_title, pr_body, pr_number, commit_messages, author):
@@ -127,17 +135,18 @@ def main():
                 backport_base_branch = f'branch-{version}'
                 temp_branch_name = f'backport/{pr.number}/to-{version}'
                 base_branch_name = repo.default_branch
-                commit = get_pr_commits(pr)
-                print(f'PR #{pr_number} - "{pr_title}": Base Branch: {base_branch_name} will backport to: {backport_base_branch} using Temp Branch: {temp_branch_name}')
-                try:
-                    # Cherry-pick the commits into the temporary branch
-                    new_commit_sha, commit_messages = cherry_pick_commits(repo, commit, backport_base_branch, temp_branch_name)
-                    # Create a pull request with the original PR body and list of commits
-                    pr_title = f"[Backport {version}] {pr_title}"
-                    create_pull_request(repo, temp_branch_name, backport_base_branch, pr_title, pr_body, pr_number, commit_messages, original_author)
+                commits = get_pr_commits(pr)
+                if commits.totalCount > 0:
+                    print(f'PR #{pr_number} - "{pr_title}": Base Branch: {base_branch_name} will backport to: {backport_base_branch} using Temp Branch: {temp_branch_name}')
+                    try:
+                        # Cherry-pick the commits into the temporary branch
+                        new_commit_sha, commit_messages = cherry_pick_commits(pr, repo, commits, backport_base_branch, temp_branch_name)
+                        # Create a pull request with the original PR body and list of commits
+                        pr_title = f"[Backport {version}] {pr_title}"
+                        create_pull_request(repo, temp_branch_name, backport_base_branch, pr_title, pr_body, pr_number, commit_messages, original_author)
 
-                except Exception as e:
-                    print(f"Failed to cherry-pick and create PR: {e}")
+                    except Exception as e:
+                        print(f"Failed to cherry-pick and create PR: {e}")
 
 
 if __name__ == "__main__":
