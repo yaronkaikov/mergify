@@ -72,7 +72,7 @@ def cherry_pick_commits(pr, repo, commits, base_branch_name, temp_branch_name):
         parent_commit = new_commit  # Update parent for the next commit
 
         # Add commit message to the list
-        commit_messages.append(f"- (cherry picked from commit {commit_sha})")
+    commit_messages.append(f"- (cherry picked from commit {commit_sha})")
 
     # Create a new temporary branch with the final cherry-picked commit
     try:
